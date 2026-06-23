@@ -109,6 +109,15 @@
   }
   .send-btn:hover { opacity: 0.88; }
   .send-done { font-size: 13px; color: var(--teal); text-align: center; margin-top: 8px; }
+  .input-group { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .input-group input {
+    width: 100%; padding: 10px 12px;
+    border: 1px solid var(--gray-200); border-radius: var(--radius-sm);
+    font-size: 13px; font-family: inherit; color: var(--gray-900);
+    background: #fff;
+  }
+  .input-group input:focus { outline: none; border-color: var(--purple); }
+  .input-label { font-size: 12px; color: var(--gray-600); margin-bottom: 2px; }
   .site-footer { margin-top: 2.5rem; text-align: center; padding: 1.5rem 1rem; border-top: 0.5px solid var(--gray-200); }
   .site-footer p { font-size: 12px; color: var(--gray-400); line-height: 1.8; }
   .site-footer strong { color: var(--gray-600); font-weight: 500; }
@@ -144,6 +153,20 @@
     <div class="verdict-box verdict-good" id="boxGood">
       <div class="v-title">✅ 전반적으로 양호합니다</div>
       <div class="v-desc">현재 연령에 맞는 발달이 잘 이루어지고 있어요.<br>정기적인 발달 모니터링도 큰 도움이 됩니다.<br>궁금한 점이 있으시면 언제든 상담해 주세요.</div>
+    </div>
+    <div class="input-group">
+      <div>
+        <div class="input-label">아이 이름</div>
+        <input type="text" id="childName" placeholder="홍길동">
+      </div>
+      <div>
+        <div class="input-label">아이 생년월일</div>
+        <input type="text" id="childBirth" placeholder="예: 2022-03-15">
+      </div>
+      <div>
+        <div class="input-label">보호자 연락처</div>
+        <input type="text" id="parentPhone" placeholder="010-0000-0000">
+      </div>
     </div>
     <button class="send-btn" id="sendBtn" onclick="sendResult()">📤 결과 전송하기</button>
     <div class="send-done" id="sendDone" style="display:none">✅ 결과가 전송됐습니다.</div>
@@ -430,12 +453,19 @@ function sendResult() {
   });
   const total = Math.round(allChecked / allItems * 100) + '%';
 
+  const childName = document.getElementById('childName').value || '미입력';
+  const childBirth = document.getElementById('childBirth').value || '미입력';
+  const parentPhone = document.getElementById('parentPhone').value || '미입력';
+
   fetch(SCRIPT_URL, {
     method: 'POST',
     mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       age: cur,
+      childName: childName,
+      childBirth: childBirth,
+      parentPhone: parentPhone,
       language: domPcts['언어발달'],
       cognitive: domPcts['인지발달'],
       social: domPcts['사회성·정서'],
