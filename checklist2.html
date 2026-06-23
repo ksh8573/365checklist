@@ -384,6 +384,10 @@ function renderDomains() {
   }).join('');
 }
 
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx763hdKMPd_kU4qRmbKHG8cLdCjXt_T0iBi5VPgll7qzs9ylQ32-DCHf6vC1vADZr3/exec';
+let lastVerdict = null;
+let lastSent = false;
+
 function renderResult() {
   const allItems   = DOM_KEYS.reduce((s,d) => s + DATA[cur][d].length, 0);
   const allChecked = DOM_KEYS.reduce((s,d) => s + checks[cur][d].filter(Boolean).length, 0);
@@ -395,13 +399,41 @@ function renderResult() {
   );
 
   const resultWrap = document.getElementById('resultWrap');
+  const verdict = anyUnchecked ? '발달 지연 의심' : '양호';
 
   if (hasAny) {
     resultWrap.style.display = 'block';
     document.getElementById('boxWarn').className = 'verdict-box verdict-warn' + (anyUnchecked ? ' show' : '');
     document.getElementById('boxGood').className = 'verdict-box verdict-good' + (!anyUnchecked ? ' show' : '');
+
+    // 모든 항목 체크 완료 시 전송 (한 번만)
+    if (allChecked === allItems && !lastSent) {
+      lastSent = true;
+      const domPcts = {};
+      DOM_KEYS.forEach(d => {
+        const cnt = checks[cur][d].filter(Boolean).length;
+        domPcts[d] = cnt + '/' + DATA[cur][d].length;
+      });
+      const total = Math.round(allChecked / allItems * 100) + '%';
+
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          age: cur,
+          language: domPcts['언어발달'],
+          cognitive: domPcts['인지발달'],
+          social: domPcts['사회성·정서'],
+          motor: domPcts['대근육·소근육'],
+          verdict: verdict,
+          total: total
+        })
+      });
+    }
   } else {
     resultWrap.style.display = 'none';
+    lastSent = false;
   }
 }
 
