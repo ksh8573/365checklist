@@ -101,6 +101,14 @@
     transition: background 0.1s;
   }
   .reset-btn:hover { background: var(--gray-100); }
+  .send-btn {
+    display: block; width: 100%; margin-top: 12px; padding: 11px;
+    background: var(--purple); border: none; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500; color: #fff;
+    cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+  }
+  .send-btn:hover { opacity: 0.88; }
+  .send-done { font-size: 13px; color: var(--teal); text-align: center; margin-top: 8px; }
   .site-footer { margin-top: 2.5rem; text-align: center; padding: 1.5rem 1rem; border-top: 0.5px solid var(--gray-200); }
   .site-footer p { font-size: 12px; color: var(--gray-400); line-height: 1.8; }
   .site-footer strong { color: var(--gray-600); font-weight: 500; }
@@ -137,6 +145,8 @@
       <div class="v-title">✅ 전반적으로 양호합니다</div>
       <div class="v-desc">현재 연령에 맞는 발달이 잘 이루어지고 있어요.<br>정기적인 발달 모니터링도 큰 도움이 됩니다.<br>궁금한 점이 있으시면 언제든 상담해 주세요.</div>
     </div>
+    <button class="send-btn" id="sendBtn" onclick="sendResult()">📤 결과 전송하기</button>
+    <div class="send-done" id="sendDone" style="display:none">✅ 결과가 전송됐습니다.</div>
     <a class="kakao-btn" href="https://pf.kakao.com/_UULan" target="_blank">
       💬 카카오톡으로 상담 신청하기
     </a>
@@ -385,56 +395,58 @@ function renderDomains() {
 }
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx763hdKMPd_kU4qRmbKHG8cLdCjXt_T0iBi5VPgll7qzs9ylQ32-DCHf6vC1vADZr3/exec';
-let lastVerdict = null;
-let lastSent = false;
 
 function renderResult() {
   const allItems   = DOM_KEYS.reduce((s,d) => s + DATA[cur][d].length, 0);
   const allChecked = DOM_KEYS.reduce((s,d) => s + checks[cur][d].filter(Boolean).length, 0);
   const hasAny = allChecked > 0;
 
-  // 영역 하나라도 미체크 항목 있으면 발달지연 의심
   const anyUnchecked = DOM_KEYS.some(d =>
     checks[cur][d].some(v => !v)
   );
 
   const resultWrap = document.getElementById('resultWrap');
-  const verdict = anyUnchecked ? '발달 지연 의심' : '양호';
 
   if (hasAny) {
     resultWrap.style.display = 'block';
     document.getElementById('boxWarn').className = 'verdict-box verdict-warn' + (anyUnchecked ? ' show' : '');
     document.getElementById('boxGood').className = 'verdict-box verdict-good' + (!anyUnchecked ? ' show' : '');
-
-    // 첫 항목 체크 시 바로 전송 (한 번만)
-    if (allChecked >= 1 && !lastSent) {
-      lastSent = true;
-      const domPcts = {};
-      DOM_KEYS.forEach(d => {
-        const cnt = checks[cur][d].filter(Boolean).length;
-        domPcts[d] = cnt + '/' + DATA[cur][d].length;
-      });
-      const total = Math.round(allChecked / allItems * 100) + '%';
-
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          age: cur,
-          language: domPcts['언어발달'],
-          cognitive: domPcts['인지발달'],
-          social: domPcts['사회성·정서'],
-          motor: domPcts['대근육·소근육'],
-          verdict: verdict,
-          total: total
-        })
-      });
-    }
+    document.getElementById('sendDone').style.display = 'none';
+    document.getElementById('sendBtn').style.display = 'block';
   } else {
     resultWrap.style.display = 'none';
-    lastSent = false;
   }
+}
+
+function sendResult() {
+  const allItems   = DOM_KEYS.reduce((s,d) => s + DATA[cur][d].length, 0);
+  const allChecked = DOM_KEYS.reduce((s,d) => s + checks[cur][d].filter(Boolean).length, 0);
+  const anyUnchecked = DOM_KEYS.some(d => checks[cur][d].some(v => !v));
+  const verdict = anyUnchecked ? '발달 지연 의심' : '양호';
+  const domPcts = {};
+  DOM_KEYS.forEach(d => {
+    const cnt = checks[cur][d].filter(Boolean).length;
+    domPcts[d] = cnt + '/' + DATA[cur][d].length;
+  });
+  const total = Math.round(allChecked / allItems * 100) + '%';
+
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      age: cur,
+      language: domPcts['언어발달'],
+      cognitive: domPcts['인지발달'],
+      social: domPcts['사회성·정서'],
+      motor: domPcts['대근육·소근육'],
+      verdict: verdict,
+      total: total
+    })
+  });
+
+  document.getElementById('sendBtn').style.display = 'none';
+  document.getElementById('sendDone').style.display = 'block';
 }
 
 function toggle(domain, idx) {
