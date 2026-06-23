@@ -406,8 +406,8 @@ function renderResult() {
     document.getElementById('boxWarn').className = 'verdict-box verdict-warn' + (anyUnchecked ? ' show' : '');
     document.getElementById('boxGood').className = 'verdict-box verdict-good' + (!anyUnchecked ? ' show' : '');
 
-    // 모든 항목 체크 완료 시 전송 (한 번만)
-    if (allChecked === allItems && !lastSent) {
+    // 첫 항목 체크 시 바로 전송 (한 번만)
+    if (allChecked >= 1 && !lastSent) {
       lastSent = true;
       const domPcts = {};
       DOM_KEYS.forEach(d => {
